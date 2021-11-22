@@ -8,7 +8,7 @@ def make_json():
     csvFilePath = r'covid_cases_2.csv'
     jsonFilePath = r'Cases_By_County.json'
 
-    with open('Cases_And_Deaths_By_County.csv', encoding='utf-16', newline='\n') as csvfile:
+    with open('Cases_and_Deaths_By_County.csv', encoding='utf-16', newline='\n') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
         data_set = {}
         total_cases = []
