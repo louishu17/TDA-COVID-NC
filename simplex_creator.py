@@ -33,7 +33,7 @@ def calculate_total_homology(points):
 data = np.loadtxt("County_Location.csv", delimiter=',', usecols=range(1,3))
 calculate_total_homology(data)
 
-with open('County_Cases.json','r') as f:
+with open('County_Cases.json') as f:
     data = json.load(f)
     print(data)
 
