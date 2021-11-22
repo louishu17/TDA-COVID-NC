@@ -22,3 +22,4 @@ print(data_3D_weighted)
 
 f = dionysus.Filtration(simplices)
 print(f)
+
