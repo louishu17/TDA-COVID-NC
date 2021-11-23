@@ -31,6 +31,13 @@ def plot_landscapes(points):
     plt.title("Landscape")
     plt.show()
 
+    PI = gd.representations.PersistenceImage(bandwidth=1e-4, weight=lambda x: x[1]**2, \
+                                         im_range=[0,.004,0,.004], resolution=[100,100])
+    pi = PI.fit_transform([simplicies.persistence_intervals_in_dimension(1)])
+    plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))
+    plt.title("Persistence Image")
+    plt.show()
+
 def sample_counties(date, x, weighted):
     with open('Cases_By_County.json') as fp:
         json_data = json.load(fp)
@@ -93,7 +100,7 @@ for i in range(delta.days + 1):
 
     day = sdate + timedelta(days=i)
     day = day.strftime("%#m/%#d/%Y")
-    total_county_sample = 40
+    total_county_sample = 30
     
     counties = sample_counties(day, total_county_sample, True)
     # print(counties)
