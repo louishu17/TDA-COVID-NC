@@ -11,13 +11,14 @@ def sample_counties(date, x):
         
         for key,values in countiesData.items():
             counties.append(key)
-            cases.append(values[0])
+            cases.append(values[2])
 
-        total = sum(cases)
-        for i in range(len(cases)):
-            cases[i] = cases[i] / total
+        # total = sum(cases)
+        # print(total)
+        # for i in range(len(cases)):
+        #     cases[i] = cases[i] / total
 
-        # print(cases)
+        print(cases)
         # for c in counties:
         #     cases.append(counties[c])
         print(choice(counties, x, p= cases,replace=False))
