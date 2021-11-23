@@ -66,10 +66,10 @@ def make_json():
         for date in mylist:
             for idx, county in enumerate(data_set[date].keys()):
                 case_and_death_data = data_set[date][county]
-                case_and_death_data[2] = case_and_death_data[0]/population_density[idx]
+                case_and_death_data[2] = case_and_death_data[0]*population_density[idx]
                 if total_deaths[i] == 0:
                     continue
-                case_and_death_data[3] = case_and_death_data[1]/population_density[idx]
+                case_and_death_data[3] = case_and_death_data[1]*population_density[idx]
             i+=1
         with open("Cases_By_County.json", "w") as outfile:
             json.dump(data_set, outfile)
