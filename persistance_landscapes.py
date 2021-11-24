@@ -14,29 +14,33 @@ import numpy as np
 import gudhi as gd
 import gudhi.representations
 import matplotlib.pyplot as plt
+import os
 
 
-def plot_landscapes(points):
+def plot_landscapes(points, date):
     simplicies = gd.AlphaComplex(points=points).create_simplex_tree()
     dgmX = simplicies.persistence()
 
-    gd.plot_persistence_diagram(dgmX)
-    plt.show()
+    # gd.plot_persistence_diagram(dgmX)
+    # plt.show()
 
-    LS = gd.representations.Landscape(resolution=1000)
+    #
+    LS = gd.representations.Landscape(resolution=50, sample_range = [0, 1])
     L = LS.fit_transform([simplicies.persistence_intervals_in_dimension(1)])
-    plt.plot(L[0][:1000])
-    plt.plot(L[0][1000:2000])
-    plt.plot(L[0][2000:3000])
+    plt.plot(L[0][:50])
+    plt.plot(L[0][50:100])
+    plt.plot(L[0][100:150])
     plt.title("Landscape")
-    plt.show()
+    filesday = day.replace('/',' ')
+    plt.savefig('images/figure ' + filesday + '.png', bbox_inches='tight')
+    plt.close()
 
-    PI = gd.representations.PersistenceImage(bandwidth=1e-4, weight=lambda x: x[1]**2, \
-                                         im_range=[0,.004,0,.004], resolution=[100,100])
-    pi = PI.fit_transform([simplicies.persistence_intervals_in_dimension(1)])
-    plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))
-    plt.title("Persistence Image")
-    plt.show()
+    # PI = gd.representations.PersistenceImage(bandwidth=1e-4, weight=lambda x: x[1]**2, \
+    #                                      im_range=[0,.004,0,.004], resolution=[100,100])
+    # pi = PI.fit_transform([simplicies.persistence_intervals_in_dimension(1)])
+    # plt.imshow(np.flip(np.reshape(pi[0], [100,100]), 0))
+    # plt.title("Persistence Image")
+    # plt.show()
 
 def sample_counties(date, x, weighted):
     with open('Cases_By_County.json') as fp:
@@ -87,9 +91,36 @@ def sample_counties(date, x, weighted):
 
         return data
 
-sdate = date(2021, 9,11)   # start date
+def plot_counties(data):
+    x_coords = []
+    y_coords = []
+    for x,y in data:
+        x_coords.append(x)
+        y_coords.append(y)
+    x_fullcoords = []
+    y_fullcoords = []
+    with open("County_Location.csv", encoding='utf-8-sig') as csvf:
+        csvReader= csv.DictReader(csvf)
+        for rows in csvReader:
+            # print (rows)
+            x_fullcoords.append(float(rows['X']))
+            y_fullcoords.append(float(rows['Y']))
+
+    plt.style.use('seaborn-ticks')
+
+
+    plt.scatter(x_fullcoords, y_fullcoords)
+    plt.scatter(x_coords, y_coords)
+
+    ax = plt.gca()
+    ax.set_ylim([-90,-70])
+
+    plt.show()
+
+
+sdate = date(2021,11,7)   # start date
 # sdate = date(2021, 10, 7)   # start date (test)
-edate = date(2021, 9,11 )   # end date
+edate = date(2021,11,7)   # end date
 
 delta = edate - sdate       # as timedelta
 date_array_unformatted = []
@@ -100,7 +131,7 @@ for i in range(delta.days + 1):
 
     day = sdate + timedelta(days=i)
     day = day.strftime("%#m/%#d/%Y")
-    total_county_sample = 30
+    total_county_sample = 20
     
     counties = sample_counties(day, total_county_sample, True)
     # print(counties)
@@ -120,4 +151,5 @@ for i in range(delta.days + 1):
     total_trials = 1
     for j in range(total_trials):
         counties = sample_counties(day, total_county_sample, True)
-        plot_landscapes(counties)
+        plot_counties(counties)
+        # plot_landscapes(counties, day)
