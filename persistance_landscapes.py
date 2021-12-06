@@ -16,6 +16,7 @@ import gudhi.representations
 import matplotlib.pyplot as plt
 import os
 import operator
+import scipy
 
 
 def plot_landscapes(points, prevLandscape, first):
@@ -199,7 +200,7 @@ for i in range(delta.days + 1):
 
     day = sdate + timedelta(days=i)
     day = day.strftime("%#m/%#d/%Y")
-    total_county_sample = 50
+    total_county_sample = 75
     
     counties = sample_counties(day, total_county_sample, True)
     # print(counties)
@@ -216,7 +217,7 @@ for i in range(delta.days + 1):
     
     zero_total = 0
     first_total = 0
-    total_trials = 1
+    total_trials = 30
     total_diff = 0
     
     if first:
@@ -233,6 +234,11 @@ for i in range(delta.days + 1):
     
     prevLandScape = plot_landscapes(counties, prevLandScape, first)[0]
 
-print(avgL2NormLandscape)
+# print(avgL2NormLandscape)
+
+print(scipy.stats.pearsonr(avgL2NormLandscape, total_cases_array[1:]))
+date_array = [dt.datetime.strptime(d,'%m/%d/%Y').date() for d in date_array_unformatted]
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=30))
 plt.plot(avgL2NormLandscape)
 plt.show()
