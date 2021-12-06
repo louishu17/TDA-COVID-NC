@@ -15,9 +15,10 @@ import gudhi as gd
 import gudhi.representations
 import matplotlib.pyplot as plt
 import os
+import operator
 
 
-def plot_landscapes(points, date):
+def plot_landscapes(points, prevLandscape, first):
     simplicies = gd.AlphaComplex(points=points).create_simplex_tree()
     dgmX = simplicies.persistence()
 
@@ -25,15 +26,21 @@ def plot_landscapes(points, date):
     # plt.show()
 
     #
-    LS = gd.representations.Landscape(resolution=50, sample_range = [0, 1])
-    L = LS.fit_transform([simplicies.persistence_intervals_in_dimension(1)])
-    plt.plot(L[0][:50])
-    plt.plot(L[0][50:100])
-    plt.plot(L[0][100:150])
-    plt.title("Landscape")
-    filesday = day.replace('/',' ')
-    plt.savefig('images/figure ' + filesday + '.png', bbox_inches='tight')
-    plt.close()
+    SH = gd.representations.Silhouette(resolution=50,weight=lambda x: np.power(x[1]-x[0],1), sample_range = [0, 1])
+    sh = SH.fit_transform([simplicies.persistence_intervals_in_dimension(1)])
+    if first:
+        return sh[0]
+    else:
+        # print(prevLandScape)
+        # print(sh[0])
+        # print(np.linalg.norm(sh[0] - prevLandscape))
+        return (sh[0], np.linalg.norm(sh[0] - prevLandscape))
+    # plt.plot(sh[0])
+    # plt.title("Landscape")
+    # filesday = day.replace('/',' ')
+    # plt.savefig('images/figure ' + filesday + '.png', bbox_inches='tight')
+    # plt.show()
+    # plt.close()
 
     # PI = gd.representations.PersistenceImage(bandwidth=1e-4, weight=lambda x: x[1]**2, \
     #                                      im_range=[0,.004,0,.004], resolution=[100,100])
@@ -46,7 +53,7 @@ def sample_counties(date, x, weighted):
     with open('Cases_By_County.json') as fp:
         json_data = json.load(fp)
 
-        print(date)
+        # print(date)
 
         if not json_data.get(date) is None:
             countiesData = json_data[date]
@@ -77,7 +84,7 @@ def sample_counties(date, x, weighted):
         # for c in counties:
         #     cases.append(counties[c])
         list_of_counties = choice(counties, x, p= cases,replace=False)
-        print(list_of_counties)
+        # print(list_of_counties)
 
         data = []
         with open("County_Location.csv", encoding='utf-8-sig') as csvf:
@@ -94,9 +101,7 @@ def sample_counties(date, x, weighted):
 def plot_counties(data):
     x_coords = []
     y_coords = []
-    for x,y in data:
-        x_coords.append(x)
-        y_coords.append(y)
+
     x_fullcoords = []
     y_fullcoords = []
     with open("County_Location.csv", encoding='utf-8-sig') as csvf:
@@ -105,6 +110,9 @@ def plot_counties(data):
             # print (rows)
             x_fullcoords.append(float(rows['X']))
             y_fullcoords.append(float(rows['Y']))
+            if rows['County'] in data:
+                x_coords.append(float(rows['X']))
+                y_coords.append(float(rows['Y']))
 
     plt.style.use('seaborn-ticks')
 
@@ -112,14 +120,70 @@ def plot_counties(data):
     plt.scatter(x_fullcoords, y_fullcoords)
     plt.scatter(x_coords, y_coords)
 
+    plt.xlabel("Longitude")
+    plt.ylabel("Lattitude")
+
     ax = plt.gca()
     ax.set_ylim([-90,-70])
 
     plt.show()
 
+def sample_section_counties(date, weighted, number):
+    if number == 1:
+        json_file_name = 'Cases_By_County.json'
+    else:
+        json_file_name = 'Cases_By_County_2.json'
+    with open(json_file_name) as fp:
+        json_data = json.load(fp)
+        if not json_data.get(date) is None:
+            countiesData = json_data[date]
+        else:
+            return None
+        counties_list = {}
+        for key,values in countiesData.items():
+            if not weighted:
+                counties_list[key] = values[0]
+                # counties_list.append(tuple((key, values[0])))
+            else:
+                counties_list[key] = values[2]
+                # cases.append(tuple((key, values[2])))
+                #print(values[2])
+        sorted_list = sorted(counties_list.items(), key=operator.itemgetter(1))
+        sorted_list.reverse()
+        #print(sorted_list)
+        top_thirty = []
+        mid_thirty = []
+        last_thirty = []
+        for i in range(len(sorted_list)-10):
+            county, cases = sorted_list[i]
+            if i<30:
+                top_thirty.append(county)
+            elif i<60:
+                mid_thirty.append(county)
+            else:
+                last_thirty.append(county)
+        data_top = []
+        data_mid = []
+        data_last = []
+        with open("County_Location.csv", encoding='utf-8-sig') as csvf:
+            csvReader= csv.DictReader(csvf)
+            for rows in csvReader:
+                if rows['County'] in top_thirty:
+                    data_top.append([float(rows['X']), float(rows['Y'])])
+                elif rows['County'] in mid_thirty:
+                    data_mid.append([float(rows['X']), float(rows['Y'])])
+                elif rows['County'] in last_thirty:
+                    data_last.append([float(rows['X']), float(rows['Y'])])
+#         print (data_top)
+#         print (data_mid)
+#         print (data_last)
+        data_top = np.asarray(np.stack(data_top))
+        data_mid = np.asarray(np.stack(data_mid))
+        data_last = np.asarray(np.stack(data_last))
+        return data_top
 
-sdate = date(2021,11,7)   # start date
-# sdate = date(2021, 10, 7)   # start date (test)
+# sdate = date(2021,11,2)   # start date
+sdate = date(2021, 5,13)   # start date (test)
 edate = date(2021,11,7)   # end date
 
 delta = edate - sdate       # as timedelta
@@ -127,11 +191,15 @@ date_array_unformatted = []
 zero_array = []
 first_array = []
 total_cases_array = []
+prevLandScape = []
+avgL2NormLandscape = []
+first = True
+
 for i in range(delta.days + 1):
 
     day = sdate + timedelta(days=i)
     day = day.strftime("%#m/%#d/%Y")
-    total_county_sample = 20
+    total_county_sample = 50
     
     counties = sample_counties(day, total_county_sample, True)
     # print(counties)
@@ -149,7 +217,22 @@ for i in range(delta.days + 1):
     zero_total = 0
     first_total = 0
     total_trials = 1
-    for j in range(total_trials):
-        counties = sample_counties(day, total_county_sample, True)
-        plot_counties(counties)
-        # plot_landscapes(counties, day)
+    total_diff = 0
+    
+    if first:
+        prevLandScape = plot_landscapes(counties, prevLandScape, first)
+        first = False
+        continue
+    else:
+        for j in range(total_trials):
+            # counties = sample_section_counties(day, True, 1)
+            # print(counties)
+            # plot_counties(counties)
+            total_diff += plot_landscapes(counties, prevLandScape, first)[1]
+        avgL2NormLandscape.append(total_diff / total_trials)
+    
+    prevLandScape = plot_landscapes(counties, prevLandScape, first)[0]
+
+print(avgL2NormLandscape)
+plt.plot(avgL2NormLandscape)
+plt.show()
