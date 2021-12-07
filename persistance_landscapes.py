@@ -99,27 +99,47 @@ def sample_counties(date, x, weighted):
 
         return data
 
-def plot_counties(data):
-    x_coords = []
-    y_coords = []
+def plot_counties(date, weighted):
 
+    countieslist = {}
     x_fullcoords = []
     y_fullcoords = []
+    cases = []
+    countiesData = {}
     with open("County_Location.csv", encoding='utf-8-sig') as csvf:
         csvReader= csv.DictReader(csvf)
         for rows in csvReader:
-            # print (rows)
-            x_fullcoords.append(float(rows['X']))
-            y_fullcoords.append(float(rows['Y']))
-            if rows['County'] in data:
-                x_coords.append(float(rows['X']))
-                y_coords.append(float(rows['Y']))
+            countieslist.setdefault(rows['County'], [float(rows['X']),float(rows['Y']),])
+    json_file_name = 'Cases_By_County.json'
+    with open(json_file_name) as fp:
+        json_data = json.load(fp)
+        if not json_data.get(date) is None:
+            countiesData = json_data[date]
+        else:
+            print("DID NOT FIND")
+            return None
+    
+    # print(countieslist)
+    for key,values in countiesData.items():
+        # print(key)
+        if key == "New":
+            key = "New Hanover"
+        if not weighted:
+            countieslist[key].append(values[0])
+            # counties_list.append(tuple((key, values[0])))
+        else:
+            countieslist[key].append(values[2])
 
     plt.style.use('seaborn-ticks')
 
+    fig, ax = plt.subplots()
 
-    plt.scatter(x_fullcoords, y_fullcoords)
-    plt.scatter(x_coords, y_coords)
+    for key,values in countieslist.items():
+        x_fullcoords.append(values[0])
+        y_fullcoords.append(values[1])
+        cases.append(values[2])
+
+    ax.scatter(x_fullcoords, y_fullcoords, c=cases, s=50, cmap='Blues')
 
     plt.xlabel("Longitude")
     plt.ylabel("Lattitude")
@@ -184,8 +204,8 @@ def sample_section_counties(date, weighted, number):
         return data_top
 
 # sdate = date(2021,11,2)   # start date
-sdate = date(2021, 5,13)   # start date (test)
-edate = date(2021,11,7)   # end date
+sdate = date(2021, 9,11)   # start date (test)
+edate = date(2021, 9, 11)   # end date
 
 delta = edate - sdate       # as timedelta
 date_array_unformatted = []
@@ -200,7 +220,7 @@ for i in range(delta.days + 1):
 
     day = sdate + timedelta(days=i)
     day = day.strftime("%#m/%#d/%Y")
-    total_county_sample = 75
+    total_county_sample = 50
     
     counties = sample_counties(day, total_county_sample, True)
     # print(counties)
@@ -217,18 +237,18 @@ for i in range(delta.days + 1):
     
     zero_total = 0
     first_total = 0
-    total_trials = 30
+    total_trials = 1
     total_diff = 0
     
+    plot_counties(day, False)
     if first:
         prevLandScape = plot_landscapes(counties, prevLandScape, first)
-        first = False
+        first = True
         continue
     else:
         for j in range(total_trials):
             # counties = sample_section_counties(day, True, 1)
             # print(counties)
-            # plot_counties(counties)
             total_diff += plot_landscapes(counties, prevLandScape, first)[1]
         avgL2NormLandscape.append(total_diff / total_trials)
     
@@ -236,9 +256,9 @@ for i in range(delta.days + 1):
 
 # print(avgL2NormLandscape)
 
-print(scipy.stats.pearsonr(avgL2NormLandscape, total_cases_array[1:]))
-date_array = [dt.datetime.strptime(d,'%m/%d/%Y').date() for d in date_array_unformatted]
-plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
-plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=30))
-plt.plot(avgL2NormLandscape)
-plt.show()
+# print(scipy.stats.pearsonr(avgL2NormLandscape, total_cases_array[1:]))
+# date_array = [dt.datetime.strptime(d,'%m/%d/%Y').date() for d in date_array_unformatted]
+# plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%d/%Y'))
+# plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=30))
+# plt.plot(avgL2NormLandscape)
+# plt.show()
